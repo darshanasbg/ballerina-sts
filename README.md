@@ -1,6 +1,7 @@
 This is a sample service to issue JWT token.
 ## Setup
 Configure correct configuration parameters in ballerina.conf
+
 Run sts service
 ballerina run ballerina/sts
 
