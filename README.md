@@ -12,4 +12,4 @@ ballerina run samples/sts
 curl -v -X POST --basic -u username:Password -k  -d "grant_type=password&client-key=1234APItest@&scope=112"  https://localhost:9095/token
 
 ## Sample auth request
-curl -k -H "Authorization:Bearer <token>" https://localhost:9096/echo
+curl -k -H "Authorization:Bearer -token-" https://localhost:9096/echo
