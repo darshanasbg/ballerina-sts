@@ -8,8 +8,8 @@ Run sample echo service
 ballerina run samples/sts
 
 ## Sample token request
-curl -v -X POST --basic -u username:Password -k  -d "grant_type=password&client-key=1234APItest@&scope=112"  https://localhost:9095/token
+curl -v -X POST -H "content-type:application/x-www-form-urlencoded" --basic -u 10001:klk -k -d "grant_type=password&username=ishara&password=abc&scope=112" https://localhost:9095/token
 
 ## Sample auth request
-curl -k -H "Authorization:Bearer <token>" https://localhost:9096/echo
+curl -k -H "Authorization:Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJpc2hhcmEiLCJpc3MiOiJ3c28yIiwiZXhwIjoxNTIwODM4NzQ4ODkyLCJpYXQiOjE1MjA4Mzg0NDg4OTMsImp0aSI6IiIsImF1ZCI6WyJiYWxsZXJpbmExIiwiYmFsbGVyaW5hMiIsIkJhbGxlcmluYSJdfQ==.eBWfbhu9vz2Evu-_Y9FtKEZOwn3RIVF86g9y_FczroCdmwGPvWCxNozcfzFFmchYy6fvKF3_vsoWG26sv2S6iP2CCgCC9T8jw5ygandKMhUOWGRiDx-0VQtvYo7L-Ql06i1WTANjbLL-V5has1BJKiqNUm8NR0HSb7P0rUlRGfw=" https://localhost:9096/echo
 
