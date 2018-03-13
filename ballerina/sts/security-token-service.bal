@@ -3,17 +3,26 @@ package ballerina.sts;
 import ballerina.net.http;
 import ballerina.io;
 import ballerina.auth.utils;
-@http:configuration {
-    basePath:"/token",
-    httpsPort:9095,
-    keyStoreFile:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
-    keyStorePassword:"ballerina",
-    certPassword:"ballerina"
-}service<http> stsService {
+
+endpoint<http:Service> tokenEP {
+    port:9095,
+    ssl:{
+        keyStoreFile:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
+        keyStorePassword:"ballerina",
+        certPassword:"ballerina"
+    }
+}
+
+@http:serviceConfig {
+      basePath:"/token",
+      endpoints: [tokenEP]
+}
+service<http:Service> stsService {
      @http:resourceConfig {
          methods:["POST"],
          path:"/"
-     }    resource token (http:Connection conn, http:InRequest req) {
+     }
+     resource token (http:ServerConnector conn, http:Request req) {
 
          TokenRequest tokenRequest;
          TokenResponse tokenResponse;
@@ -24,7 +33,7 @@ import ballerina.auth.utils;
              tokenResponse, eResp = issue(tokenRequest);
          }
 
-         http:OutResponse res = {};
+         http:Response res = {};
          if (tokenResponse != null) {
              var j, _ = <json>tokenResponse;
              res.setJsonPayload(j);
@@ -33,11 +42,11 @@ import ballerina.auth.utils;
              res.setStringPayload(eResp.message);
              res.statusCode = eResp.statuesCode;
          }
-         _ = conn.respond(res);
+         _ = conn -> respond(res);
      }
  }
 
-function validateRequest (http:InRequest req) (TokenRequest, ErrorResponse) {
+function validateRequest (http:Request req) (TokenRequest, ErrorResponse) {
     string contentType = req.getHeader(CONTENT_TYPE);
     if (APPLICATION_FORM != contentType) {
         ErrorResponse eResp = {};

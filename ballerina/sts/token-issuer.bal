@@ -5,6 +5,7 @@ import ballerina.time;
 import ballerina.io;
 import ballerina.auth.userstore;
 import ballerina.auth.basic;
+import ballerina.util;
 
 @Description {value:"Represents a oauth2 access token request"}
 @Field {value:"scope: Scope of the access token"}
@@ -141,6 +142,7 @@ function createPayload (TokenRequest tokenRequest, ApplicationConfig appConfig) 
     payload.exp = time:currentTime().time + appConfig.expTime;
     payload.iat = time:currentTime().time;
     payload.nbf = time:currentTime().time;
+    payload.jti = util:uuid();
     var audArray, e = (string[])appConfig.apps[tokenRequest.client_id];
     payload.aud = audArray;
     //TODO need to set user claim from security context
