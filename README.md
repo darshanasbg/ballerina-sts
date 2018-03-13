@@ -1,6 +1,8 @@
 # Ballerina security token service [STS]
 Ballerina security token service is a lightweight Identity provider which is capable of issuing self contained access tokens for small scale deployments.
 
+![alt text](https://github.com/isharak/ballerina-sts/blob/master/Bal-STS.png)
+
 ## Configurations
 ballerina.conf file includes all configuration required to configure security token service and echo service.
 Follow the provided inline instruction in configuration file.
