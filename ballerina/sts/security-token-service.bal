@@ -1,28 +1,29 @@
 package ballerina.sts;
 
 import ballerina.net.http;
-import ballerina.io;
 import ballerina.auth.utils;
+import ballerina.net.http.authadaptor;
 
-endpoint<http:Service> tokenEP {
+endpoint http:ServiceEndpoint tokenEP {
     port:9095,
-    ssl:{
-        keyStoreFile:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
-        keyStorePassword:"ballerina",
-        certPassword:"ballerina"
+    secureSocket:{
+        keyStore: {
+            filePath:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
+            password:"ballerina"
+        }
     }
-}
+};
 
-@http:serviceConfig {
+@http:ServiceConfig {
       basePath:"/token",
       endpoints: [tokenEP]
 }
-service<http:Service> stsService {
-     @http:resourceConfig {
+service<http:Service> stsService bind tokenEP {
+     @http:ResourceConfig {
          methods:["POST"],
          path:"/"
      }
-     resource token (http:ServerConnector conn, http:Request req) {
+     token (endpoint outboundEP, http:Request req) {
 
          TokenRequest tokenRequest;
          TokenResponse tokenResponse;
@@ -42,7 +43,7 @@ service<http:Service> stsService {
              res.setStringPayload(eResp.message);
              res.statusCode = eResp.statuesCode;
          }
-         _ = conn -> respond(res);
+         _ = outboundEP -> respond(res);
      }
  }
 
@@ -55,7 +56,7 @@ function validateRequest (http:Request req) (TokenRequest, ErrorResponse) {
         return null, eResp;
     }
     //Get input data
-    var basicAuthHeaderValue, err = utils:extractBasicAuthHeaderValue(req);
+    var basicAuthHeaderValue, err = authadaptor:extractBasicAuthHeaderValue(req);
     var inClientId, inClientSecret, err = utils:extractBasicAuthCredentials(basicAuthHeaderValue);
 
     var params, _ = req.getFormParams();

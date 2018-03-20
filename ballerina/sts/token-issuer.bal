@@ -2,7 +2,6 @@ package ballerina.sts;
 
 import ballerina.jwt;
 import ballerina.time;
-import ballerina.io;
 import ballerina.auth.userstore;
 import ballerina.auth.basic;
 import ballerina.util;
@@ -49,7 +48,11 @@ function issue (TokenRequest tokenRequest) (TokenResponse, ErrorResponse) {
         if (e != null) {
             ErrorResponse eResp = {};
             eResp.statuesCode = 400;
-            eResp.message = "invalid_request : Invalid input or error while processing the request";
+            if (e.message != null) {
+                eResp.message = "invalid_request : " + e.message;
+            } else {
+                eResp.message = "invalid_request : Invalid input or error while processing the request";
+            }
             return null, eResp;
         }
         else {
@@ -65,14 +68,13 @@ function issue (TokenRequest tokenRequest) (TokenResponse, ErrorResponse) {
         eResp.message = "invalid_grant : Invalid resource owner credentials";
         return null, eResp;
     }
-
 }
 
 function isAuthenticatedUser (TokenRequest tokenRequest) (boolean) {
     if (authenticator == null) {
         userstore:FilebasedUserstore fileBasedUserstore = {};
-        userstore:CredentialsStore fileBasedCredentialStore = (userstore:CredentialsStore)fileBasedUserstore;
-        authenticator = {credentialsStore:fileBasedCredentialStore, authCache:null};
+        userstore:UserStore fileBasedUserStore = (userstore:UserStore)fileBasedUserstore;
+        authenticator = {userStore:fileBasedUserStore, authCache:null};
     }
     return authenticator.authenticate(tokenRequest.userName, tokenRequest.credential);
 }
@@ -84,9 +86,6 @@ function issueToken (TokenRequest tokenRequest, ApplicationConfig appConfig) (st
     jwt:JWTIssuerConfig config = {};
     config.certificateAlias = appConfig.keyAlias;
     config.keyPassword = appConfig.keyPassword;
-    io:println(header);
-    io:println(payload);
-    io:println(config);
     var jwtString, e = jwt:issue(header, payload, config);
     return jwtString, e;
 }
@@ -132,8 +131,6 @@ function createHeader (ApplicationConfig appConfig) (jwt:Header) {
 
 //TODO change the function to process security context and add user claims.
 function createPayload (TokenRequest tokenRequest, ApplicationConfig appConfig) (jwt:Payload) {
-    io:println(tokenRequest.client_id);
-    io:println(appConfig);
     jwt:Payload payload = {};
 
     //TODO Need to get this from securityContext

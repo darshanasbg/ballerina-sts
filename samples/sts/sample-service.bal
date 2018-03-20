@@ -1,27 +1,28 @@
 package samples.sts;
 
 import ballerina.net.http;
-import ballerina.auth.jwtAuth;
+import ballerina.net.http.authadaptor;
 
-endpoint<http:Service> echoEP {
+endpoint http:ServiceEndpoint echoEP {
     port:9096,
-    ssl:{
-        keyStoreFile:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
-        keyStorePassword:"ballerina",
-        certPassword:"ballerina"
+    secureSocket:{
+        keyStore: {
+            filePath:"${ballerina.home}/bre/security/ballerinaKeystore.p12",
+            password:"ballerina"
+        }
     }
-}
+};
 
-@http:serviceConfig {
+@http:ServiceConfig {
     basePath:"/echo",
     endpoints: [echoEP]
-} service<http:Service> helloWorld {
-     @http:resourceConfig {
+} service<http:Service> helloWorld bind echoEP {
+     @http:ResourceConfig {
          methods:["GET"],
          path:"/"
      }
-     resource sayHello (http:ServerConnector conn, http:Request req) {
-         jwtAuth:HttpJwtAuthnHandler handler = {};
+     sayHello (endpoint outboundEP, http:Request req) {
+         authadaptor:HttpJwtAuthnHandler handler = {};
          boolean isAuthenticated = false;
          if (handler.canHandle(req)) {
              isAuthenticated = handler.handle(req);
@@ -32,6 +33,6 @@ endpoint<http:Service> echoEP {
          } else {
              res.setStringPayload("Invalid autentication\n");
          }
-         _ = conn -> respond(res);
+         _ = outboundEP -> respond(res);
      }
  }
