@@ -1,10 +1,10 @@
-package ballerina.sts;
+package sts;
 
-import ballerina.jwt;
-import ballerina.time;
-import ballerina.auth.userstore;
-import ballerina.auth.basic;
-import ballerina.util;
+import ballerina/jwt;
+import ballerina/time;
+import ballerina/auth.userstore;
+import ballerina/auth.basic;
+import ballerina/util;
 
 @Description {value:"Represents a oauth2 access token request"}
 @Field {value:"scope: Scope of the access token"}
@@ -40,57 +40,61 @@ struct ErrorResponse {
 
 basic:BasicAuthenticator authenticator;
 
-function issue (TokenRequest tokenRequest) (TokenResponse, ErrorResponse) {
+function issue (TokenRequest tokenRequest) returns (TokenResponse|ErrorResponse) {
     //var tokenResponse, err = issueJwtToken();
     ApplicationConfig appConfig = loadApplicationConfig();
     if (isAuthenticatedUser(tokenRequest)) {
-        var token, e = issueToken(tokenRequest, appConfig);
-        if (e != null) {
-            ErrorResponse eResp = {};
-            eResp.statuesCode = 400;
-            if (e.message != null) {
-                eResp.message = "invalid_request : " + e.message;
-            } else {
-                eResp.message = "invalid_request : Invalid input or error while processing the request";
+        match issueToken(tokenRequest, appConfig) {
+            string token => {
+                TokenResponse tokenResponse = {};
+                tokenResponse.access_token = token;
+                tokenResponse.expires_in = appConfig.expTime / 1000;
+                tokenResponse.token_type = "Bearer";
+                return tokenResponse;
             }
-            return null, eResp;
+            error err => {
+                ErrorResponse eResp = {};
+                eResp.statuesCode = 400;
+                if (err.message != null) {
+                    eResp.message = "invalid_request : " + err.message;
+                } else {
+                    eResp.message = "invalid_request : Invalid input or error while processing the request";
+                }
+                return eResp;
+            }
         }
-        else {
-            TokenResponse tokenResponse = {};
-            tokenResponse.access_token = token;
-            tokenResponse.expires_in = appConfig.expTime / 1000;
-            tokenResponse.token_type = "Bearer";
-            return tokenResponse, null;
-        }
+
     } else {
         ErrorResponse eResp = {};
         eResp.statuesCode = 400;
         eResp.message = "invalid_grant : Invalid resource owner credentials";
-        return null, eResp;
+        return eResp;
     }
 }
 
-function isAuthenticatedUser (TokenRequest tokenRequest) (boolean) {
+function isAuthenticatedUser (TokenRequest tokenRequest) returns (boolean) {
     if (authenticator == null) {
         userstore:FilebasedUserstore fileBasedUserstore = {};
-        userstore:UserStore fileBasedUserStore = (userstore:UserStore)fileBasedUserstore;
-        authenticator = {userStore:fileBasedUserStore, authCache:null};
+        authenticator = basic:createAuthenticator(fileBasedUserstore, null);
     }
     return authenticator.authenticate(tokenRequest.userName, tokenRequest.credential);
 }
 
-function issueToken (TokenRequest tokenRequest, ApplicationConfig appConfig) (string, error) {
+function issueToken (TokenRequest tokenRequest, ApplicationConfig appConfig) returns (string|error) {
     jwt:Header header = createHeader(appConfig);
     jwt:Payload payload = createPayload(tokenRequest, appConfig);
 
     jwt:JWTIssuerConfig config = {};
     config.certificateAlias = appConfig.keyAlias;
     config.keyPassword = appConfig.keyPassword;
-    var jwtString, e = jwt:issue(header, payload, config);
-    return jwtString, e;
+    match jwt:issue(header, payload, config) {
+        string token => return token;
+        error err => return err;
+    }
+    //return jwt:issue(header, payload, config);
 }
 
-function issueJwtToken () (TokenResponse, ErrorResponse) {
+function issueJwtToken () returns (TokenResponse|ErrorResponse) {
     int tokenExpTime = 300000; // In milliseconds.
     jwt:Header header = {};
     header.alg = "RS256";
@@ -106,23 +110,24 @@ function issueJwtToken () (TokenResponse, ErrorResponse) {
     config.certificateAlias = "wso2carbon";
     config.keyPassword = "wso2carbon";
 
-    var jwtString, e = jwt:issue(header, payload, config);
-    if (e != null) {
-        ErrorResponse eResp = {};
-        eResp.statuesCode = 400;
-        eResp.message = "Invalid input or error while processing the request";
-        return null, eResp;
-    }
-    else {
-        TokenResponse tokenResponse = {};
-        tokenResponse.access_token = jwtString;
-        tokenResponse.expires_in = tokenExpTime / 1000;
-        tokenResponse.token_type = "Bearer";
-        return tokenResponse, null;
+    match jwt:issue(header, payload, config) {
+        string jwtString => {
+            TokenResponse tokenResponse = {};
+            tokenResponse.access_token = jwtString;
+            tokenResponse.expires_in = tokenExpTime / 1000;
+            tokenResponse.token_type = "Bearer";
+            return tokenResponse;
+        }
+        error err => {
+            ErrorResponse eResp = {};
+            eResp.statuesCode = 400;
+            eResp.message = "Invalid input or error while processing the request";
+            return eResp;
+        }
     }
 }
 
-function createHeader (ApplicationConfig appConfig) (jwt:Header) {
+function createHeader (ApplicationConfig appConfig) returns (jwt:Header) {
     jwt:Header header = {};
     header.alg = appConfig.signingAlg;
     header.typ = JWT;
@@ -130,7 +135,7 @@ function createHeader (ApplicationConfig appConfig) (jwt:Header) {
 }
 
 //TODO change the function to process security context and add user claims.
-function createPayload (TokenRequest tokenRequest, ApplicationConfig appConfig) (jwt:Payload) {
+function createPayload (TokenRequest tokenRequest, ApplicationConfig appConfig) returns (jwt:Payload) {
     jwt:Payload payload = {};
 
     //TODO Need to get this from securityContext
@@ -140,13 +145,12 @@ function createPayload (TokenRequest tokenRequest, ApplicationConfig appConfig) 
     payload.iat = time:currentTime().time;
     payload.nbf = time:currentTime().time;
     payload.jti = util:uuid();
-    var audArray, e = (string[])appConfig.apps[tokenRequest.client_id];
-    payload.aud = audArray;
+    payload.aud =? <string[]>appConfig.apps[tokenRequest.client_id];
     //TODO need to set user claim from security context
     return payload;
 }
 
-function createJWTIssueConfig (ApplicationConfig appConfig) (jwt:JWTIssuerConfig) {
+function createJWTIssueConfig (ApplicationConfig appConfig) returns (jwt:JWTIssuerConfig) {
     jwt:JWTIssuerConfig config = {};
     config.certificateAlias = appConfig.keyAlias;
     return config;

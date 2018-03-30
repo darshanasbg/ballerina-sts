@@ -16,15 +16,20 @@ ballerina run ballerina/sts
 Run sample echo service :
 Inside the ballerina-sts folder
 ```
-ballerina run samples/sts
+cd samples/
+ballerina run secureAPI
 ```
 
 ## Sample token request
 ```
 curl -v -X POST -H "content-type:application/x-www-form-urlencoded" --basic -u <client_id>:<client_secret optional> -k
 -d "grant_type=password&username=<userName>&password=<password>&scope=<scopes optional>" https://localhost:9095/token
+
+curl -v -X POST -H "content-type:application/x-www-form-urlencoded" --basic -u 10001:klk -k -d "grant_type=password&username=ishara&password=abc&scope=112" https://localhost:9095/token
 ```
 ## Sample auth request
 ```
 curl -k -H "Authorization:Bearer <token>" https://localhost:9096/echo
+
+curl -k --basic -u ishara:abc https://localhost:9096/echo
 ```
