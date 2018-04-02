@@ -1,9 +1,8 @@
 package sts;
 
 import ballerina/mime;
-import ballerina/net.http;
+import ballerina/http;
 import ballerina/auth.utils;
-import ballerina/net.http.authadaptor;
 
 endpoint http:ServiceEndpoint tokenEP {
     port:9095,
@@ -65,7 +64,7 @@ function validateRequest (http:Request req) returns (TokenRequest|ErrorResponse)
     }
 
     string basicAuthHeaderValue;
-    match authadaptor:extractBasicAuthHeaderValue(req) {
+    match http:extractBasicAuthHeaderValue(req) {
         string basicAuthHeaderStr => {
             basicAuthHeaderValue = basicAuthHeaderStr;
         }

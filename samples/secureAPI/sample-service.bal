@@ -1,11 +1,10 @@
 package secureAPI;
 
-import ballerina/net.http;
-import ballerina/net.http.endpoints;
+import ballerina/http;
 import ballerina/io;
 import ballerina/auth;
 
-endpoint endpoints:ApiEndpoint echoEP {
+endpoint http:ApiEndpoint echoEP {
     port:9096,
     secureSocket:
     {
@@ -22,15 +21,15 @@ endpoint endpoints:ApiEndpoint echoEP {
     //endpoints:[echoEP]
 }
 @auth:Config {
-    authentication:{enabled:true}
-    //scope:"xxx"
+    authentication:{enabled:true},
+    scopes:["scope1"]
 }service<http:Service> helloWorld bind echoEP {
      @http:ResourceConfig {
          methods:["GET"],
          path:"/"
      }
      @auth:Config {
-         //scope:"scope2"
+         scopes:["scope1"]
      }
      sayHello (endpoint outboundEP, http:Request req) {
          http:Response res = {};
